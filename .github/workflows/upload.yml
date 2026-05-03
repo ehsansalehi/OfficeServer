@@ -1,0 +1,32 @@
+name: Download and Upload Office ISO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ISO from Microsoft
+        run: wget -O OfficeServer.iso "https://download.microsoft.com/download/3/f/5/3f5f8a7e-462b-41ff-a5b2-04bdf5821ceb/OfficeServer.iso"
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: office-server-v1.0
+          release_name: "Office Server ISO File"
+          draft: false
+          prerelease: false
+      
+      - name: Upload ISO to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./OfficeServer.iso
+          asset_name: OfficeServer.iso
+          asset_content_type: application/x-iso9660-image
