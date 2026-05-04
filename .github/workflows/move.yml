@@ -1,0 +1,26 @@
+name: Download OfficeServer.iso to repository
+
+on:
+  workflow_dispatch:  # با این گزینه می‌توانید اجرا را به صورت دستی شروع کنید
+
+jobs:
+  download-file:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download OfficeServer.iso from Release
+      run: |
+        # آدرس مستقیم فایل خود را اینجا قرار دهید
+        curl -L https://github.com/ehsansalehi/OfficeServer/releases/download/office-server-v1.0/OfficeServer.iso --output OfficeServer.iso
+      working-directory: ${{ github.workspace }}
+
+    - name: Commit and push the file
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add OfficeServer.iso
+        git commit -m "Add OfficeServer.iso downloaded from Releases"
+        git push
