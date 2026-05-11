@@ -24,7 +24,7 @@ jobs:
     - name: Download html2canvas
       run: |
         echo "Downloading from: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-        curl -L --fail -o public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+        wget --verbose --output-document=public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
         DOWNLOAD_EXIT_CODE=$?
         echo "Download exit code: $DOWNLOAD_EXIT_CODE"
         if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
