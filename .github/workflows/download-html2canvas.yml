@@ -1,13 +1,13 @@
-name: Download html2canvas
+name: Download File to Source
 
 on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+  workflow_dispatch:  # اجرای دستی
 
 jobs:
   download:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # اجازه نوشتن در مخزن
     
     steps:
     - name: Checkout repository
@@ -15,50 +15,37 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Create directory
+    - name: Create target directory
       run: |
-        mkdir -p public/js
-        echo "Directory created at: $(pwd)/public/js"
-        ls -la public/js/
+        mkdir -p assets/js
+        echo "✅ Directory created"
     
     - name: Download html2canvas
       run: |
-        echo "Downloading from: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-        wget --verbose --output-document=public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
-        DOWNLOAD_EXIT_CODE=$?
-        echo "Download exit code: $DOWNLOAD_EXIT_CODE"
-        if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
-          echo "❌ Download failed with exit code $DOWNLOAD_EXIT_CODE"
-          exit $DOWNLOAD_EXIT_CODE
-        fi
+        echo "📥 Downloading file..."
+        curl -L --retry 3 --retry-delay 2 -o assets/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+        echo "Download exit code: $?"
     
-    - name: Verify download
+    - name: Verify file
       run: |
-        echo "Checking downloaded file..."
-        ls -la public/js/
-        if [ -f public/js/html2canvas.min.js ]; then
-          FILE_SIZE=$(stat -c%s "public/js/html2canvas.min.js")
-          echo "✅ File exists! Size: $FILE_SIZE bytes"
-          if [ $FILE_SIZE -lt 1000 ]; then
-            echo "⚠️ Warning: File is too small! Might be an error page."
-            cat public/js/html2canvas.min.js
-            exit 1
-          fi
-          head -c 200 public/js/html2canvas.min.js
+        if [ -f assets/js/html2canvas.min.js ] && [ -s assets/js/html2canvas.min.js ]; then
+          FILE_SIZE=$(wc -c < assets/js/html2canvas.min.js)
+          echo "✅ File downloaded successfully! Size: $FILE_SIZE bytes"
+          file assets/js/html2canvas.min.js
         else
-          echo "❌ File not found at public/js/html2canvas.min.js"
+          echo "❌ Download failed or file is empty"
           exit 1
         fi
     
-    - name: Commit and push
+    - name: Commit and push to source
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add public/js/html2canvas.min.js
-        if git diff --cached --quiet; then
-          echo "ℹ️ No changes to commit (file might already exist)"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add assets/js/html2canvas.min.js
+        if git diff --staged --quiet; then
+          echo "ℹ️ No changes to commit"
         else
-          git commit -m "Add html2canvas.min.js v1.4.1"
+          git commit -m "Add html2canvas.min.js v1.4.1 to source [skip ci]"
           git push
-          echo "✅ Successfully committed and pushed!"
+          echo "✅ File uploaded to source code!"
         fi
