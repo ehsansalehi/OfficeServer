@@ -1,0 +1,41 @@
+name: Download html2canvas
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:  # اجرای دستی
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Create scripts directory
+      run: mkdir -p public/js
+    
+    - name: Download html2canvas
+      run: |
+        curl -L -o public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+    
+    - name: Verify download
+      run: |
+        if [ -f public/js/html2canvas.min.js ]; then
+          echo "✅ File downloaded successfully!"
+          ls -lh public/js/html2canvas.min.js
+        else
+          echo "❌ Download failed!"
+          exit 1
+        fi
+    
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add public/js/html2canvas.min.js
+        git diff --cached --quiet || git commit -m "Add html2canvas.min.js v1.4.1"
+        git push
