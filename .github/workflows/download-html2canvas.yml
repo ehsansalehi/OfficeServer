@@ -3,7 +3,7 @@ name: Download html2canvas
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:  # اجرای دستی
+  workflow_dispatch:
 
 jobs:
   download:
@@ -15,27 +15,50 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Create scripts directory
-      run: mkdir -p public/js
+    - name: Create directory
+      run: |
+        mkdir -p public/js
+        echo "Directory created at: $(pwd)/public/js"
+        ls -la public/js/
     
     - name: Download html2canvas
       run: |
-        curl -L -o public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+        echo "Downloading from: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        curl -L --fail -o public/js/html2canvas.min.js https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+        DOWNLOAD_EXIT_CODE=$?
+        echo "Download exit code: $DOWNLOAD_EXIT_CODE"
+        if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
+          echo "❌ Download failed with exit code $DOWNLOAD_EXIT_CODE"
+          exit $DOWNLOAD_EXIT_CODE
+        fi
     
     - name: Verify download
       run: |
+        echo "Checking downloaded file..."
+        ls -la public/js/
         if [ -f public/js/html2canvas.min.js ]; then
-          echo "✅ File downloaded successfully!"
-          ls -lh public/js/html2canvas.min.js
+          FILE_SIZE=$(stat -c%s "public/js/html2canvas.min.js")
+          echo "✅ File exists! Size: $FILE_SIZE bytes"
+          if [ $FILE_SIZE -lt 1000 ]; then
+            echo "⚠️ Warning: File is too small! Might be an error page."
+            cat public/js/html2canvas.min.js
+            exit 1
+          fi
+          head -c 200 public/js/html2canvas.min.js
         else
-          echo "❌ Download failed!"
+          echo "❌ File not found at public/js/html2canvas.min.js"
           exit 1
         fi
     
-    - name: Commit and push if changed
+    - name: Commit and push
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add public/js/html2canvas.min.js
-        git diff --cached --quiet || git commit -m "Add html2canvas.min.js v1.4.1"
-        git push
+        if git diff --cached --quiet; then
+          echo "ℹ️ No changes to commit (file might already exist)"
+        else
+          git commit -m "Add html2canvas.min.js v1.4.1"
+          git push
+          echo "✅ Successfully committed and pushed!"
+        fi
